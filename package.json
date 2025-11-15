@@ -1,10 +1,11 @@
 {
   "name": "shaders-on-scroll",
   "version": "1.0.0",
-  "description": "",
-  "main": "dist/index.html",
+  "description": "A Three.js shader application with smooth scroll animations",
   "scripts": {
-    "start": "parcel src/index.html --open",
+    "start": "parcel src/index.html",
+    "start:open": "parcel src/index.html --open",
+    "dev": "parcel src/index.html --port 1234",
     "clean": "rm -rf dist/*",
     "build:parcel": "parcel build src/index.html --no-content-hash --no-source-maps --public-url ./",
     "build": "npm run clean && npm run build:parcel"
@@ -17,6 +18,8 @@
   "author": "",
   "license": "ISC",
   "devDependencies": {
+    "@parcel/transformer-glsl": "^2.16.1",
+    "@parcel/transformer-sass": "^2.16.1",
     "parcel": "latest"
   },
   "dependencies": {

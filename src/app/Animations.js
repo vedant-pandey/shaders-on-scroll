@@ -1,4 +1,4 @@
-import GSAP from 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm'
+import GSAP from 'gsap'
 
 export default class {
   constructor(element, camera) {

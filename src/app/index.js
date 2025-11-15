@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import GSAP from 'https://cdn.jsdelivr.net/npm/gsap@3.12.5/+esm'
+import GSAP from 'gsap'
 
 import Animations from './Animations.js'
 import SmoothScroll from './SmoothScroll.js'
