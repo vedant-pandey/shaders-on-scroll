@@ -232,6 +232,13 @@ class ScrollStage {
       return current + (next - current) * progress
     }
 
+    // Enhanced easing function for more dynamic movement
+    const easeInOutCubic = (t) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+    }
+
+    const easedProgress = easeInOutCubic(sectionProgress)
+
     // Animate shader uniforms
     GSAP.to(this.mesh.material.uniforms.uFrequency, {
       value: interpolate(currentSettings.uFrequency, nextSettings.uFrequency, sectionProgress),
@@ -296,22 +303,34 @@ class ScrollStage {
       ease: 'power2.out'
     })
 
-    // Animate mesh position (move across screen)
-    const targetPositionX = interpolate(
+    // ENHANCED: Animate mesh position with parallax effect based on scroll progress
+    const basePositionX = interpolate(
       currentSettings.position.x,
       nextSettings.position.x,
-      sectionProgress
+      easedProgress
     )
-    const targetPositionY = interpolate(
+    const basePositionY = interpolate(
       currentSettings.position.y,
       nextSettings.position.y,
-      sectionProgress
+      easedProgress
     )
-    const targetPositionZ = interpolate(
+    const basePositionZ = interpolate(
       currentSettings.position.z,
       nextSettings.position.z,
-      sectionProgress
+      easedProgress
     )
+
+    // Add parallax wave effect - creates wave-like movement as you scroll
+    const parallaxWaveX = Math.sin(sectionProgress * Math.PI * 2) * 0.15
+    const parallaxWaveY = Math.cos(sectionProgress * Math.PI * 2) * 0.1
+
+    // Add depth parallax - moves forward/backward based on scroll progress
+    const depthParallax = Math.sin(sectionProgress * Math.PI) * 0.2
+
+    // Combine base position with parallax effects
+    const targetPositionX = basePositionX + parallaxWaveX
+    const targetPositionY = basePositionY + parallaxWaveY
+    const targetPositionZ = basePositionZ + depthParallax
 
     GSAP.to(this.mesh.position, {
       x: targetPositionX,
@@ -321,12 +340,20 @@ class ScrollStage {
       ease: 'power2.out'
     })
 
-    // Animate mesh scale (grow/shrink)
-    const targetScale = interpolate(
+    // ENHANCED: Animate mesh scale with pulsing/breathing effect
+    const baseScale = interpolate(
       currentSettings.scale,
       nextSettings.scale,
-      sectionProgress
+      easedProgress
     )
+
+    // Add pulsing effect - scale grows and shrinks as you scroll through section
+    const pulseScale = Math.sin(sectionProgress * Math.PI) * 0.15
+
+    // Add intensity-based variation - more dramatic scaling in later sections
+    const intensityMultiplier = 1 + (currentSection * 0.05)
+
+    const targetScale = baseScale + (pulseScale * intensityMultiplier)
 
     GSAP.to(this.mesh.scale, {
       x: targetScale,
@@ -336,16 +363,32 @@ class ScrollStage {
       ease: 'power2.out'
     })
 
-    // Animate camera position for depth effect
-    const targetCameraZ = interpolate(
+    // ENHANCED: Animate camera position with dynamic zoom based on scroll progress
+    const baseCameraZ = interpolate(
       currentSettings.cameraZ,
       nextSettings.cameraZ,
-      sectionProgress
+      easedProgress
     )
+
+    // Add zoom pulse - camera zooms in/out slightly as you scroll
+    const zoomPulse = Math.sin(sectionProgress * Math.PI) * 0.3
+
+    const targetCameraZ = baseCameraZ + zoomPulse
 
     GSAP.to(this.camera.position, {
       z: targetCameraZ,
       duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // ENHANCED: Add camera tilt based on position for cinematic effect
+    const cameraTiltX = (targetPositionY * -0.1) + (sectionProgress * 0.05)
+    const cameraTiltY = (targetPositionX * 0.08) + (Math.sin(sectionProgress * Math.PI) * 0.03)
+
+    GSAP.to(this.camera.rotation, {
+      x: cameraTiltX,
+      y: cameraTiltY,
+      duration: 1.5,
       ease: 'power2.out'
     })
 
