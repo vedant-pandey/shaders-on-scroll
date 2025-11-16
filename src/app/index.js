@@ -374,6 +374,9 @@ class ScrollStage {
 
     this.animations = new Animations(this.element, this.camera)
 
+    // Ensure sizes are recalculated after load
+    this.smoothScroll.setSizes()
+
     // Initialize threshold-based snap scrolling
     const scrollStage = document.querySelector('.scroll__stage')
     if (scrollStage) {

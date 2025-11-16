@@ -10,11 +10,17 @@ export default class {
       scrollStage: this.element.querySelector('.scroll__stage'),
       scrollContent: this.element.querySelector('.scroll__content')
     }
+
+    // Initialize sizes
+    this.setSizes()
   }
 
   setSizes() {
-    this.scroll.height = this.elements.scrollContent.getBoundingClientRect().height
-    this.scroll.limit = this.scroll.height - this.viewport.height
+    // Use scrollHeight of the scroll container for accurate measurement
+    this.scroll.height = this.elements.scrollStage.scrollHeight
+    this.scroll.limit = this.scroll.height - this.elements.scrollStage.clientHeight
+
+    // Don't set body height - we're using scroll__stage as scroll container
   }
 
   update() {
