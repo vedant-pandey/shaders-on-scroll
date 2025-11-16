@@ -38,7 +38,7 @@ class ScrollStage {
 
     // Define unique shader settings for each section (5 sections total)
     this.sectionSettings = [
-      // Section 1: Hero - Calm introduction
+      // Section 1: Hero - Calm introduction, centered, medium size
       {
         uFrequency: 0,
         uAmplitude: 4,
@@ -46,9 +46,12 @@ class ScrollStage {
         uStrength: 0.3,
         uDeepPurple: 1,
         uOpacity: 0.4,
-        rotationMultiplier: 0.2
+        rotation: { x: 0.2, y: 0, z: 0 },
+        position: { x: 0, y: 0, z: 0 },
+        scale: 1.0,
+        cameraZ: 2.5
       },
-      // Section 2: Services - Moderate energy
+      // Section 2: Services - Moderate energy, move right, scale up
       {
         uFrequency: 2,
         uAmplitude: 4,
@@ -56,9 +59,12 @@ class ScrollStage {
         uStrength: 0.6,
         uDeepPurple: 0.7,
         uOpacity: 0.5,
-        rotationMultiplier: 0.4
+        rotation: { x: 0.4, y: 0.3, z: 0.1 },
+        position: { x: 0.8, y: -0.3, z: 0.2 },
+        scale: 1.3,
+        cameraZ: 2.8
       },
-      // Section 3: Case Studies - High energy
+      // Section 3: Case Studies - High energy, move left, larger
       {
         uFrequency: 3.5,
         uAmplitude: 4,
@@ -66,9 +72,12 @@ class ScrollStage {
         uStrength: 0.9,
         uDeepPurple: 0.4,
         uOpacity: 0.6,
-        rotationMultiplier: 0.6
+        rotation: { x: 0.6, y: -0.4, z: 0.2 },
+        position: { x: -0.7, y: 0.4, z: -0.3 },
+        scale: 1.5,
+        cameraZ: 3.2
       },
-      // Section 4: Process - Dynamic
+      // Section 4: Process - Dynamic, move bottom right, very large
       {
         uFrequency: 4,
         uAmplitude: 4,
@@ -76,9 +85,12 @@ class ScrollStage {
         uStrength: 1.1,
         uDeepPurple: 0.2,
         uOpacity: 0.65,
-        rotationMultiplier: 0.8
+        rotation: { x: 0.8, y: 0.5, z: -0.2 },
+        position: { x: 0.6, y: -0.5, z: 0.5 },
+        scale: 1.7,
+        cameraZ: 3.5
       },
-      // Section 5: Contact - Energetic finale
+      // Section 5: Contact - Energetic finale, centered high, massive
       {
         uFrequency: 4.5,
         uAmplitude: 4,
@@ -86,7 +98,10 @@ class ScrollStage {
         uStrength: 1.2,
         uDeepPurple: 0,
         uOpacity: 0.7,
-        rotationMultiplier: 1.0
+        rotation: { x: 1.0, y: 0.8, z: 0.3 },
+        position: { x: 0, y: 0.5, z: 0.8 },
+        scale: 2.0,
+        cameraZ: 4.0
       }
     ]
 
@@ -254,15 +269,82 @@ class ScrollStage {
       ease: 'power2.out'
     })
 
-    // Animate mesh rotation based on section
-    const targetRotation = interpolate(
-      currentSettings.rotationMultiplier,
-      nextSettings.rotationMultiplier,
+    // Animate mesh rotation based on section (all axes)
+    const targetRotationX = interpolate(
+      currentSettings.rotation.x,
+      nextSettings.rotation.x,
+      sectionProgress
+    ) * Math.PI
+
+    const targetRotationY = interpolate(
+      currentSettings.rotation.y,
+      nextSettings.rotation.y,
+      sectionProgress
+    ) * Math.PI
+
+    const targetRotationZ = interpolate(
+      currentSettings.rotation.z,
+      nextSettings.rotation.z,
       sectionProgress
     ) * Math.PI
 
     GSAP.to(this.mesh.rotation, {
-      x: targetRotation,
+      x: targetRotationX,
+      y: targetRotationY,
+      z: targetRotationZ,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // Animate mesh position (move across screen)
+    const targetPositionX = interpolate(
+      currentSettings.position.x,
+      nextSettings.position.x,
+      sectionProgress
+    )
+    const targetPositionY = interpolate(
+      currentSettings.position.y,
+      nextSettings.position.y,
+      sectionProgress
+    )
+    const targetPositionZ = interpolate(
+      currentSettings.position.z,
+      nextSettings.position.z,
+      sectionProgress
+    )
+
+    GSAP.to(this.mesh.position, {
+      x: targetPositionX,
+      y: targetPositionY,
+      z: targetPositionZ,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // Animate mesh scale (grow/shrink)
+    const targetScale = interpolate(
+      currentSettings.scale,
+      nextSettings.scale,
+      sectionProgress
+    )
+
+    GSAP.to(this.mesh.scale, {
+      x: targetScale,
+      y: targetScale,
+      z: targetScale,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // Animate camera position for depth effect
+    const targetCameraZ = interpolate(
+      currentSettings.cameraZ,
+      nextSettings.cameraZ,
+      sectionProgress
+    )
+
+    GSAP.to(this.camera.position, {
+      z: targetCameraZ,
       duration: 1.2,
       ease: 'power2.out'
     })
@@ -350,7 +432,11 @@ class ScrollStage {
    */
   update() {
     const elapsedTime = this.clock.getElapsedTime()
-    this.mesh.rotation.y = elapsedTime * .05
+
+    // Add subtle continuous oscillation on top of scroll-based rotation
+    // This creates a "breathing" effect
+    this.mesh.rotation.y += Math.sin(elapsedTime * 0.5) * 0.0005
+    this.mesh.rotation.x += Math.cos(elapsedTime * 0.3) * 0.0003
 
     this.smoothScroll.update()
 
