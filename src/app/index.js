@@ -3,6 +3,7 @@ import GSAP from 'gsap'
 
 import Animations from './Animations.js'
 import SmoothScroll from './SmoothScroll.js'
+import ThresholdSnap from './ThresholdSnap.js'
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
@@ -197,6 +198,12 @@ class ScrollStage {
     document.body.classList.remove('loading')
 
     this.animations = new Animations(this.element, this.camera)
+
+    // Initialize threshold-based snap scrolling
+    const scrollStage = document.querySelector('.scroll__stage')
+    if (scrollStage) {
+      this.thresholdSnap = new ThresholdSnap(scrollStage)
+    }
   }
 
   onMouseMove(event) {
