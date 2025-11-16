@@ -103,7 +103,7 @@ class ScrollStage {
         scale: 2.0,
         cameraZ: 4.0
       }
-    ]
+    ].reverse();
 
     this.currentSectionIndex = 0
 
