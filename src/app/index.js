@@ -51,7 +51,7 @@ class ScrollStage {
         scale: 1.0,
         cameraZ: 2.5
       },
-      // Section 2: Services - Moderate energy, PROMINENT right movement
+      // Section 2: Services - Moderate energy, move right, scale up
       {
         uFrequency: 2,
         uAmplitude: 4,
@@ -60,11 +60,11 @@ class ScrollStage {
         uDeepPurple: 0.7,
         uOpacity: 0.5,
         rotation: { x: 0.4, y: 0.3, z: 0.1 },
-        position: { x: 1.2, y: -0.5, z: 0.3 },
-        scale: 1.4,
-        cameraZ: 3.0
+        position: { x: 0.8, y: -0.3, z: 0.2 },
+        scale: 1.3,
+        cameraZ: 2.8
       },
-      // Section 3: Case Studies - High energy, DRAMATIC left movement
+      // Section 3: Case Studies - High energy, move left, larger
       {
         uFrequency: 3.5,
         uAmplitude: 4,
@@ -73,11 +73,11 @@ class ScrollStage {
         uDeepPurple: 0.4,
         uOpacity: 0.6,
         rotation: { x: 0.6, y: -0.4, z: 0.2 },
-        position: { x: -1.0, y: 0.6, z: -0.4 },
-        scale: 1.6,
-        cameraZ: 3.4
+        position: { x: -0.7, y: 0.4, z: -0.3 },
+        scale: 1.5,
+        cameraZ: 3.2
       },
-      // Section 4: Process - EXTREME dynamic movement
+      // Section 4: Process - Dynamic, move bottom right, very large
       {
         uFrequency: 4,
         uAmplitude: 4,
@@ -86,11 +86,11 @@ class ScrollStage {
         uDeepPurple: 0.2,
         uOpacity: 0.65,
         rotation: { x: 0.8, y: 0.5, z: -0.2 },
-        position: { x: 0.9, y: -0.8, z: 0.7 },
-        scale: 1.9,
-        cameraZ: 3.8
+        position: { x: 0.6, y: -0.5, z: 0.5 },
+        scale: 1.7,
+        cameraZ: 3.5
       },
-      // Section 5: Contact - MASSIVE energetic finale
+      // Section 5: Contact - Energetic finale, centered high, massive
       {
         uFrequency: 4.5,
         uAmplitude: 4,
@@ -99,9 +99,9 @@ class ScrollStage {
         uDeepPurple: 0,
         uOpacity: 0.7,
         rotation: { x: 1.0, y: 0.8, z: 0.3 },
-        position: { x: 0, y: 0.8, z: 1.0 },
-        scale: 2.2,
-        cameraZ: 4.5
+        position: { x: 0, y: 0.5, z: 0.8 },
+        scale: 2.0,
+        cameraZ: 4.0
       }
     ].reverse();
 
@@ -303,7 +303,7 @@ class ScrollStage {
       ease: 'power2.out'
     })
 
-    // ENHANCED: Animate mesh position with PROMINENT parallax effect based on scroll progress
+    // ENHANCED: Animate mesh position with parallax effect based on scroll progress
     const basePositionX = interpolate(
       currentSettings.position.x,
       nextSettings.position.x,
@@ -320,78 +320,75 @@ class ScrollStage {
       easedProgress
     )
 
-    // Add PROMINENT parallax wave effect - creates dramatic wave-like movement as you scroll
-    const parallaxWaveX = Math.sin(sectionProgress * Math.PI * 2) * 0.4
-    const parallaxWaveY = Math.cos(sectionProgress * Math.PI * 2) * 0.35
+    // Add parallax wave effect - creates wave-like movement as you scroll
+    const parallaxWaveX = Math.sin(sectionProgress * Math.PI * 2) * 0.15
+    const parallaxWaveY = Math.cos(sectionProgress * Math.PI * 2) * 0.1
 
-    // Add PROMINENT depth parallax - moves forward/backward based on scroll progress
-    const depthParallax = Math.sin(sectionProgress * Math.PI) * 0.5
+    // Add depth parallax - moves forward/backward based on scroll progress
+    const depthParallax = Math.sin(sectionProgress * Math.PI) * 0.2
 
-    // Section-based position multiplier - increases movement in later sections
-    const positionIntensity = 1 + (currentSection * 0.15)
-
-    // Combine base position with prominent parallax effects
-    const targetPositionX = basePositionX + (parallaxWaveX * positionIntensity)
-    const targetPositionY = basePositionY + (parallaxWaveY * positionIntensity)
-    const targetPositionZ = basePositionZ + (depthParallax * positionIntensity)
+    // Combine base position with parallax effects
+    const targetPositionX = basePositionX + parallaxWaveX
+    const targetPositionY = basePositionY + parallaxWaveY
+    const targetPositionZ = basePositionZ + depthParallax
 
     GSAP.to(this.mesh.position, {
       x: targetPositionX,
       y: targetPositionY,
       z: targetPositionZ,
-      duration: 1.0,
+      duration: 1.2,
       ease: 'power2.out'
     })
 
-    // ENHANCED: Animate mesh scale with PROMINENT pulsing/breathing effect
+    // ENHANCED: Animate mesh scale with pulsing/breathing effect
     const baseScale = interpolate(
       currentSettings.scale,
       nextSettings.scale,
       easedProgress
     )
 
-    // Add DRAMATIC pulsing effect - scale grows and shrinks as you scroll through section
-    const pulseScale = Math.sin(sectionProgress * Math.PI) * 0.35
+    // Add pulsing effect - scale grows and shrinks as you scroll through section
+    const pulseScale = Math.sin(sectionProgress * Math.PI) * 0.15
 
-    // Add PROMINENT intensity-based variation - more dramatic scaling in later sections
-    const scaleIntensityMultiplier = 1 + (currentSection * 0.12)
+    // Add intensity-based variation - more dramatic scaling in later sections
+    const intensityMultiplier = 1 + (currentSection * 0.05)
 
-    const targetScale = baseScale + (pulseScale * scaleIntensityMultiplier)
+    const targetScale = baseScale + (pulseScale * intensityMultiplier)
 
     GSAP.to(this.mesh.scale, {
       x: targetScale,
       y: targetScale,
       z: targetScale,
-      duration: 1.0,
+      duration: 1.2,
       ease: 'power2.out'
     })
 
-    // ENHANCED: Animate camera position with DRAMATIC zoom based on scroll progress
+    // ENHANCED: Animate camera position with dynamic zoom based on scroll progress
     const baseCameraZ = interpolate(
       currentSettings.cameraZ,
       nextSettings.cameraZ,
       easedProgress
     )
 
-    // Add PROMINENT zoom pulse - camera zooms in/out dramatically as you scroll
-    const zoomPulse = Math.sin(sectionProgress * Math.PI) * 0.6
+    // Add zoom pulse - camera zooms in/out slightly as you scroll
+    const zoomPulse = Math.sin(sectionProgress * Math.PI) * 0.3
 
     const targetCameraZ = baseCameraZ + zoomPulse
 
     GSAP.to(this.camera.position, {
       z: targetCameraZ,
-      duration: 1.0,
+      duration: 1.2,
       ease: 'power2.out'
     })
 
-    // ENHANCED: Add PROMINENT camera tilt based on position for cinematic effect
-    const cameraTiltX = (targetPositionY * -0.15) + (sectionProgress * 0.08)
-    const cameraTiltY = (targetPositionX * 0.12) + (Math.sin(sectionProgress * Math.PI) * 0.05)
+    // ENHANCED: Add camera tilt based on position for cinematic effect
+    const cameraTiltX = (targetPositionY * -0.1) + (sectionProgress * 0.05)
+    const cameraTiltY = (targetPositionX * 0.08) + (Math.sin(sectionProgress * Math.PI) * 0.03)
 
     GSAP.to(this.camera.rotation, {
       x: cameraTiltX,
       y: cameraTiltY,
-      duration: 1.3,
+      duration: 1.5,
       ease: 'power2.out'
     })
 
