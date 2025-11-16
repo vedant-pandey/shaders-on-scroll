@@ -126,16 +126,77 @@ uniform float uFrequency;
 uniform float uAmplitude;
 uniform float uDensity;
 uniform float uStrength;
+uniform float uShapeType; // 0=ball right, 1=sphere center, 2=spread, 3=sinewave, 4=ground
+uniform float uMorphProgress; // 0-1 blend between base and target shape
+uniform float uTime;
 
 varying float vDistortion;
 
-void main() {  
+// Generate deterministic random value based on position
+float random(vec3 pos) {
+  return fract(sin(dot(pos, vec3(12.9898, 78.233, 45.164))) * 43758.5453);
+}
+
+// Shape formation functions
+vec3 getTargetPosition(vec3 basePos, float shapeType) {
+  vec3 targetPos = basePos;
+
+  // Section 1: Ball on the right
+  if (shapeType < 0.5) {
+    // Create sphere on right side
+    vec3 spherePos = normalize(basePos) * 1.0;
+    targetPos = spherePos + vec3(2.0, 0.0, 0.0);
+  }
+  // Section 2: Bigger sparse sphere in center
+  else if (shapeType < 1.5) {
+    // Larger sphere in center
+    targetPos = normalize(basePos) * 2.5;
+  }
+  // Section 3: All spread out on screen
+  else if (shapeType < 2.5) {
+    // Random spread across large area
+    float randX = (random(basePos) - 0.5) * 8.0;
+    float randY = (random(basePos + vec3(1.0)) - 0.5) * 6.0;
+    float randZ = (random(basePos + vec3(2.0)) - 0.5) * 2.0;
+    targetPos = vec3(randX, randY, randZ);
+  }
+  // Section 4: Single line in sinewave
+  else if (shapeType < 3.5) {
+    // Arrange in sine wave line
+    float t = basePos.x * 2.0 + basePos.y + basePos.z; // Use base position as parameter
+    float normalized_t = (t + 3.0) / 6.0; // Normalize to 0-1 range
+    float xPos = (normalized_t - 0.5) * 6.0; // Spread along x-axis
+    float yPos = sin(normalized_t * 12.0 + uTime) * 1.5; // Sine wave with animation
+    targetPos = vec3(xPos, yPos, 0.0);
+  }
+  // Section 5: Structured like ground
+  else {
+    // Flat plane at bottom like ground
+    float gridX = (random(basePos) - 0.5) * 6.0;
+    float gridZ = (random(basePos + vec3(1.0)) - 0.5) * 6.0;
+    float groundY = -2.0 + random(basePos + vec3(2.0)) * 0.3; // Slight variation
+    targetPos = vec3(gridX, groundY, gridZ);
+  }
+
+  return targetPos;
+}
+
+void main() {
   float distortion = pnoise(normal * uDensity, vec3(10.)) * uStrength;
 
-  vec3 pos = position + (normal * distortion);
+  // Base icosahedron position with noise distortion
+  vec3 basePos = position + (normal * distortion);
   float angle = sin(uv.y * uFrequency) * uAmplitude;
-  pos = rotateY(pos, angle);    
-    
+  basePos = rotateY(basePos, angle);
+
+  // Get target position based on current shape type
+  vec3 targetPos = getTargetPosition(position, uShapeType);
+
+  // Blend between base icosahedron and target shape based on morph progress
+  // When morphProgress is 0, it's the base icosahedron shape
+  // When morphProgress is 1, it's fully morphed into the target shape
+  vec3 pos = mix(basePos, targetPos, uMorphProgress);
+
   vDistortion = distortion;
 
   gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.);

@@ -38,70 +38,80 @@ class ScrollStage {
 
     // Define unique shader settings for each section (5 sections total)
     this.sectionSettings = [
-      // Section 1: Hero - Calm introduction, centered, medium size
+      // Section 1: Ball on the right
       {
         uFrequency: 0,
-        uAmplitude: 4,
-        uDensity: 1,
-        uStrength: 0.3,
+        uAmplitude: 0,
+        uDensity: 0.5,
+        uStrength: 0.1,
         uDeepPurple: 1,
-        uOpacity: 0.4,
+        uOpacity: 0.5,
+        shapeType: 0, // Ball on right
+        morphProgress: 1.0,
         rotation: { x: 0.2, y: 0, z: 0 },
         position: { x: 0, y: 0, z: 0 },
         scale: 1.0,
-        cameraZ: 2.5
-      },
-      // Section 2: Services - Moderate energy, move right, scale up
-      {
-        uFrequency: 2,
-        uAmplitude: 4,
-        uDensity: 1,
-        uStrength: 0.6,
-        uDeepPurple: 0.7,
-        uOpacity: 0.5,
-        rotation: { x: 0.4, y: 0.3, z: 0.1 },
-        position: { x: 0.8, y: -0.3, z: 0.2 },
-        scale: 1.3,
-        cameraZ: 2.8
-      },
-      // Section 3: Case Studies - High energy, move left, larger
-      {
-        uFrequency: 3.5,
-        uAmplitude: 4,
-        uDensity: 1.2,
-        uStrength: 0.9,
-        uDeepPurple: 0.4,
-        uOpacity: 0.6,
-        rotation: { x: 0.6, y: -0.4, z: 0.2 },
-        position: { x: -0.7, y: 0.4, z: -0.3 },
-        scale: 1.5,
-        cameraZ: 3.2
-      },
-      // Section 4: Process - Dynamic, move bottom right, very large
-      {
-        uFrequency: 4,
-        uAmplitude: 4,
-        uDensity: 1,
-        uStrength: 1.1,
-        uDeepPurple: 0.2,
-        uOpacity: 0.65,
-        rotation: { x: 0.8, y: 0.5, z: -0.2 },
-        position: { x: 0.6, y: -0.5, z: 0.5 },
-        scale: 1.7,
         cameraZ: 3.5
       },
-      // Section 5: Contact - Energetic finale, centered high, massive
+      // Section 2: Bigger sparse sphere in center
       {
-        uFrequency: 4.5,
-        uAmplitude: 4,
-        uDensity: 1.3,
-        uStrength: 1.2,
+        uFrequency: 0,
+        uAmplitude: 0,
+        uDensity: 0.3,
+        uStrength: 0.15,
+        uDeepPurple: 0.7,
+        uOpacity: 0.55,
+        shapeType: 1, // Sphere in center
+        morphProgress: 1.0,
+        rotation: { x: 0.3, y: 0.2, z: 0 },
+        position: { x: 0, y: 0, z: 0 },
+        scale: 1.0,
+        cameraZ: 4.5
+      },
+      // Section 3: All spread out on screen
+      {
+        uFrequency: 0,
+        uAmplitude: 0,
+        uDensity: 0.2,
+        uStrength: 0.05,
+        uDeepPurple: 0.4,
+        uOpacity: 0.6,
+        shapeType: 2, // Spread out
+        morphProgress: 1.0,
+        rotation: { x: 0.1, y: 0.1, z: 0.1 },
+        position: { x: 0, y: 0, z: 0 },
+        scale: 1.0,
+        cameraZ: 6.0
+      },
+      // Section 4: Moving in a single line in sinewave
+      {
+        uFrequency: 0,
+        uAmplitude: 0,
+        uDensity: 0.1,
+        uStrength: 0.02,
+        uDeepPurple: 0.2,
+        uOpacity: 0.65,
+        shapeType: 3, // Sine wave line
+        morphProgress: 1.0,
+        rotation: { x: 0, y: 0, z: 0 },
+        position: { x: 0, y: 0, z: 0 },
+        scale: 1.0,
+        cameraZ: 4.0
+      },
+      // Section 5: Structured like ground
+      {
+        uFrequency: 0,
+        uAmplitude: 0,
+        uDensity: 0.15,
+        uStrength: 0.03,
         uDeepPurple: 0,
         uOpacity: 0.7,
-        rotation: { x: 1.0, y: 0.8, z: 0.3 },
-        position: { x: 0, y: 0.5, z: 0.8 },
-        scale: 2.0,
-        cameraZ: 4.0
+        shapeType: 4, // Ground structure
+        morphProgress: 1.0,
+        rotation: { x: 0.4, y: 0, z: 0 },
+        position: { x: 0, y: 0.5, z: 0 },
+        scale: 1.0,
+        cameraZ: 5.0
       }
     ].reverse();
 
@@ -186,7 +196,10 @@ class ScrollStage {
         uDensity: { value: initialSettings.uDensity },
         uStrength: { value: initialSettings.uStrength },
         uDeepPurple: { value: initialSettings.uDeepPurple },
-        uOpacity: { value: initialSettings.uOpacity }
+        uOpacity: { value: initialSettings.uOpacity },
+        uShapeType: { value: initialSettings.shapeType },
+        uMorphProgress: { value: initialSettings.morphProgress },
+        uTime: { value: 0 }
       }
     })
 
@@ -272,6 +285,19 @@ class ScrollStage {
 
     GSAP.to(this.mesh.material.uniforms.uOpacity, {
       value: interpolate(currentSettings.uOpacity, nextSettings.uOpacity, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // Animate shape morphing
+    GSAP.to(this.mesh.material.uniforms.uShapeType, {
+      value: interpolate(currentSettings.shapeType, nextSettings.shapeType, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uMorphProgress, {
+      value: interpolate(currentSettings.morphProgress, nextSettings.morphProgress, sectionProgress),
       duration: 1.2,
       ease: 'power2.out'
     })
@@ -478,6 +504,9 @@ class ScrollStage {
    */
   update() {
     const elapsedTime = this.clock.getElapsedTime()
+
+    // Update time uniform for animated sine wave
+    this.mesh.material.uniforms.uTime.value = elapsedTime
 
     // Add subtle continuous oscillation on top of scroll-based rotation
     // This creates a "breathing" effect
