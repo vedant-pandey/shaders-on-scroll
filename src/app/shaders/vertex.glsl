@@ -126,8 +126,9 @@ uniform float uFrequency;
 uniform float uAmplitude;
 uniform float uDensity;
 uniform float uStrength;
-uniform float uShapeType; // 0=ball right, 1=sphere center, 2=spread, 3=sinewave, 4=ground
-uniform float uMorphProgress; // 0-1 blend between base and target shape
+uniform float uShapeType; // Current shape type (0-4)
+uniform float uNextShapeType; // Next shape type (0-4)
+uniform float uShapeProgress; // 0-1 blend between current and next shape
 uniform float uTime;
 
 varying float vDistortion;
@@ -184,18 +185,17 @@ vec3 getTargetPosition(vec3 basePos, float shapeType) {
 void main() {
   float distortion = pnoise(normal * uDensity, vec3(10.)) * uStrength;
 
-  // Base icosahedron position with noise distortion
-  vec3 basePos = position + (normal * distortion);
+  // Apply noise distortion to base position
+  vec3 distortedPos = position + (normal * distortion);
   float angle = sin(uv.y * uFrequency) * uAmplitude;
-  basePos = rotateY(basePos, angle);
+  distortedPos = rotateY(distortedPos, angle);
 
-  // Get target position based on current shape type
-  vec3 targetPos = getTargetPosition(position, uShapeType);
+  // Get positions for current and next shape types
+  vec3 currentShapePos = getTargetPosition(distortedPos, uShapeType);
+  vec3 nextShapePos = getTargetPosition(distortedPos, uNextShapeType);
 
-  // Blend between base icosahedron and target shape based on morph progress
-  // When morphProgress is 0, it's the base icosahedron shape
-  // When morphProgress is 1, it's fully morphed into the target shape
-  vec3 pos = mix(basePos, targetPos, uMorphProgress);
+  // Smoothly blend between current and next shape based on scroll progress
+  vec3 pos = mix(currentShapePos, nextShapePos, uShapeProgress);
 
   vDistortion = distortion;
 

@@ -47,7 +47,6 @@ class ScrollStage {
         uDeepPurple: 1,
         uOpacity: 0.5,
         shapeType: 0, // Ball on right
-        morphProgress: 1.0,
         rotation: { x: 0.2, y: 0, z: 0 },
         position: { x: 0, y: 0, z: 0 },
         scale: 1.0,
@@ -62,7 +61,6 @@ class ScrollStage {
         uDeepPurple: 0.7,
         uOpacity: 0.55,
         shapeType: 1, // Sphere in center
-        morphProgress: 1.0,
         rotation: { x: 0.3, y: 0.2, z: 0 },
         position: { x: 0, y: 0, z: 0 },
         scale: 1.0,
@@ -77,7 +75,6 @@ class ScrollStage {
         uDeepPurple: 0.4,
         uOpacity: 0.6,
         shapeType: 2, // Spread out
-        morphProgress: 1.0,
         rotation: { x: 0.1, y: 0.1, z: 0.1 },
         position: { x: 0, y: 0, z: 0 },
         scale: 1.0,
@@ -92,7 +89,6 @@ class ScrollStage {
         uDeepPurple: 0.2,
         uOpacity: 0.65,
         shapeType: 3, // Sine wave line
-        morphProgress: 1.0,
         rotation: { x: 0, y: 0, z: 0 },
         position: { x: 0, y: 0, z: 0 },
         scale: 1.0,
@@ -107,7 +103,6 @@ class ScrollStage {
         uDeepPurple: 0,
         uOpacity: 0.7,
         shapeType: 4, // Ground structure
-        morphProgress: 1.0,
         rotation: { x: 0.4, y: 0, z: 0 },
         position: { x: 0, y: 0.5, z: 0 },
         scale: 1.0,
@@ -198,7 +193,8 @@ class ScrollStage {
         uDeepPurple: { value: initialSettings.uDeepPurple },
         uOpacity: { value: initialSettings.uOpacity },
         uShapeType: { value: initialSettings.shapeType },
-        uMorphProgress: { value: initialSettings.morphProgress },
+        uNextShapeType: { value: this.sectionSettings[1]?.shapeType || initialSettings.shapeType },
+        uShapeProgress: { value: 0 },
         uTime: { value: 0 }
       }
     })
@@ -289,15 +285,12 @@ class ScrollStage {
       ease: 'power2.out'
     })
 
-    // Animate shape morphing
-    GSAP.to(this.mesh.material.uniforms.uShapeType, {
-      value: interpolate(currentSettings.shapeType, nextSettings.shapeType, sectionProgress),
-      duration: 1.2,
-      ease: 'power2.out'
-    })
+    // Animate shape morphing - set current and next shape types, then blend between them
+    this.mesh.material.uniforms.uShapeType.value = currentSettings.shapeType
+    this.mesh.material.uniforms.uNextShapeType.value = nextSettings.shapeType
 
-    GSAP.to(this.mesh.material.uniforms.uMorphProgress, {
-      value: interpolate(currentSettings.morphProgress, nextSettings.morphProgress, sectionProgress),
+    GSAP.to(this.mesh.material.uniforms.uShapeProgress, {
+      value: sectionProgress,
       duration: 1.2,
       ease: 'power2.out'
     })
