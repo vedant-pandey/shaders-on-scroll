@@ -181,10 +181,14 @@ class ScrollStage {
    */
   addEventListeners() {
     window.addEventListener('load', this.onLoad.bind(this))
-    
+
     // window.addEventListener('mousemove', this.onMouseMove.bind(this))  // enable for soundcheck (→ console)
-    
-    window.addEventListener('scroll', this.onScroll.bind(this))
+
+    // Listen to scroll events on scroll__stage for snap scrolling support
+    const scrollStage = document.querySelector('.scroll__stage')
+    if (scrollStage) {
+      scrollStage.addEventListener('scroll', this.onScroll.bind(this))
+    }
 
     window.addEventListener('resize', this.onResize.bind(this))
   }
