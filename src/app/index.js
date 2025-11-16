@@ -3,6 +3,7 @@ import GSAP from 'gsap'
 
 import Animations from './Animations.js'
 import SmoothScroll from './SmoothScroll.js'
+import ThresholdSnap from './ThresholdSnap.js'
 
 import vertexShader from './shaders/vertex.glsl'
 import fragmentShader from './shaders/fragment.glsl'
@@ -35,34 +36,76 @@ class ScrollStage {
       running: false
     }
 
-    this.settings = {
-      // vertex
-      uFrequency: {
-        start: 0,
-        end: 4
+    // Define unique shader settings for each section (5 sections total)
+    this.sectionSettings = [
+      // Section 1: Hero - Calm introduction, centered, medium size
+      {
+        uFrequency: 0,
+        uAmplitude: 4,
+        uDensity: 1,
+        uStrength: 0.3,
+        uDeepPurple: 1,
+        uOpacity: 0.4,
+        rotation: { x: 0.2, y: 0, z: 0 },
+        position: { x: 0, y: 0, z: 0 },
+        scale: 1.0,
+        cameraZ: 2.5
       },
-      uAmplitude: {
-        start: 4,
-        end: 4
+      // Section 2: Services - Moderate energy, move right, scale up
+      {
+        uFrequency: 2,
+        uAmplitude: 4,
+        uDensity: 1,
+        uStrength: 0.6,
+        uDeepPurple: 0.7,
+        uOpacity: 0.5,
+        rotation: { x: 0.4, y: 0.3, z: 0.1 },
+        position: { x: 0.8, y: -0.3, z: 0.2 },
+        scale: 1.3,
+        cameraZ: 2.8
       },
-      uDensity: {
-        start: 1,
-        end: 1
+      // Section 3: Case Studies - High energy, move left, larger
+      {
+        uFrequency: 3.5,
+        uAmplitude: 4,
+        uDensity: 1.2,
+        uStrength: 0.9,
+        uDeepPurple: 0.4,
+        uOpacity: 0.6,
+        rotation: { x: 0.6, y: -0.4, z: 0.2 },
+        position: { x: -0.7, y: 0.4, z: -0.3 },
+        scale: 1.5,
+        cameraZ: 3.2
       },
-      uStrength: {
-        start: 0,
-        end: 1.1
+      // Section 4: Process - Dynamic, move bottom right, very large
+      {
+        uFrequency: 4,
+        uAmplitude: 4,
+        uDensity: 1,
+        uStrength: 1.1,
+        uDeepPurple: 0.2,
+        uOpacity: 0.65,
+        rotation: { x: 0.8, y: 0.5, z: -0.2 },
+        position: { x: 0.6, y: -0.5, z: 0.5 },
+        scale: 1.7,
+        cameraZ: 3.5
       },
-      // fragment
-      uDeepPurple: {  // max 1
-        start: 1,
-        end: 0
-      },
-      uOpacity: {  // max 1
-        start: .1,
-        end: .66
+      // Section 5: Contact - Energetic finale, centered high, massive
+      {
+        uFrequency: 4.5,
+        uAmplitude: 4,
+        uDensity: 1.3,
+        uStrength: 1.2,
+        uDeepPurple: 0,
+        uOpacity: 0.7,
+        rotation: { x: 1.0, y: 0.8, z: 0.3 },
+        position: { x: 0, y: 0.5, z: 0.8 },
+        scale: 2.0,
+        cameraZ: 4.0
       }
-    }
+    ].reverse();
+
+    this.currentSectionIndex = 0
 
     this.scene = new THREE.Scene()
 
@@ -127,7 +170,10 @@ class ScrollStage {
    */
   addMesh() {
     this.geometry = new THREE.IcosahedronGeometry(1, 64)
-    
+
+    // Initialize with first section's settings
+    const initialSettings = this.sectionSettings[0]
+
     this.material = new THREE.ShaderMaterial({
       wireframe: true,
       blending: THREE.AdditiveBlending,
@@ -135,45 +181,218 @@ class ScrollStage {
       vertexShader,
       fragmentShader,
       uniforms: {
-        uFrequency: { value: this.settings.uFrequency.start },
-        uAmplitude: { value: this.settings.uAmplitude.start },
-        uDensity: { value: this.settings.uDensity.start },
-        uStrength: { value: this.settings.uStrength.start },
-        uDeepPurple: { value: this.settings.uDeepPurple.start },
-        uOpacity: { value: this.settings.uOpacity.start }
+        uFrequency: { value: initialSettings.uFrequency },
+        uAmplitude: { value: initialSettings.uAmplitude },
+        uDensity: { value: initialSettings.uDensity },
+        uStrength: { value: initialSettings.uStrength },
+        uDeepPurple: { value: initialSettings.uDeepPurple },
+        uOpacity: { value: initialSettings.uOpacity }
       }
     })
-    
+
     this.mesh = new THREE.Mesh(this.geometry, this.material)
-    
+
     this.scene.add(this.mesh)
   }
 
   /**
-   * SCROLL BASED ANIMATIONS
+   * SCROLL BASED ANIMATIONS - Section-based
    */
   updateScrollAnimations() {
     this.scroll.running = false
-    this.scroll.normalized = (this.scroll.hard / this.scroll.limit).toFixed(1)
-    
-    GSAP.to(this.mesh.rotation, {
-      x: this.scroll.normalized * Math.PI
-    })
- 
+
+    const scrollTop = this.scroll.hard
+    const sectionHeight = window.innerHeight
+    const totalSections = this.sectionSettings.length
+
+    // Calculate current section and progress within that section
+    const rawSectionIndex = scrollTop / sectionHeight
+    const sectionIndex = Math.floor(rawSectionIndex)
+    const sectionProgress = rawSectionIndex - sectionIndex
+
+    // Clamp to valid section range
+    const currentSection = Math.max(0, Math.min(sectionIndex, totalSections - 1))
+    const nextSection = Math.min(currentSection + 1, totalSections - 1)
+
+    // Get settings for current and next section
+    const currentSettings = this.sectionSettings[currentSection]
+    const nextSettings = this.sectionSettings[nextSection]
+
+    // Update progress bar based on overall scroll
+    const overallProgress = Math.min(rawSectionIndex / (totalSections - 1), 1)
     GSAP.to(this.elements.line, {
-      scaleX: this.scroll.normalized, 
-      transformOrigin: 'left', 
+      scaleX: overallProgress,
+      transformOrigin: 'left',
       duration: 1.5,
-      ease: 'ease'
+      ease: 'power2.out'
     })
 
-    for (const key in this.settings) {
-      if (this.settings[key].start !== this.settings[key].end) {
-        GSAP.to(this.mesh.material.uniforms[key], {
-          value: this.settings[key].start + this.scroll.normalized * (this.settings[key].end - this.settings[key].start)
-        })
-      }
+    // Interpolate between current and next section settings
+    const interpolate = (current, next, progress) => {
+      return current + (next - current) * progress
     }
+
+    // Enhanced easing function for more dynamic movement
+    const easeInOutCubic = (t) => {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2
+    }
+
+    const easedProgress = easeInOutCubic(sectionProgress)
+
+    // Animate shader uniforms
+    GSAP.to(this.mesh.material.uniforms.uFrequency, {
+      value: interpolate(currentSettings.uFrequency, nextSettings.uFrequency, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uAmplitude, {
+      value: interpolate(currentSettings.uAmplitude, nextSettings.uAmplitude, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uDensity, {
+      value: interpolate(currentSettings.uDensity, nextSettings.uDensity, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uStrength, {
+      value: interpolate(currentSettings.uStrength, nextSettings.uStrength, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uDeepPurple, {
+      value: interpolate(currentSettings.uDeepPurple, nextSettings.uDeepPurple, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uOpacity, {
+      value: interpolate(currentSettings.uOpacity, nextSettings.uOpacity, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // Animate mesh rotation based on section (all axes)
+    const targetRotationX = interpolate(
+      currentSettings.rotation.x,
+      nextSettings.rotation.x,
+      sectionProgress
+    ) * Math.PI
+
+    const targetRotationY = interpolate(
+      currentSettings.rotation.y,
+      nextSettings.rotation.y,
+      sectionProgress
+    ) * Math.PI
+
+    const targetRotationZ = interpolate(
+      currentSettings.rotation.z,
+      nextSettings.rotation.z,
+      sectionProgress
+    ) * Math.PI
+
+    GSAP.to(this.mesh.rotation, {
+      x: targetRotationX,
+      y: targetRotationY,
+      z: targetRotationZ,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // ENHANCED: Animate mesh position with parallax effect based on scroll progress
+    const basePositionX = interpolate(
+      currentSettings.position.x,
+      nextSettings.position.x,
+      easedProgress
+    )
+    const basePositionY = interpolate(
+      currentSettings.position.y,
+      nextSettings.position.y,
+      easedProgress
+    )
+    const basePositionZ = interpolate(
+      currentSettings.position.z,
+      nextSettings.position.z,
+      easedProgress
+    )
+
+    // Add parallax wave effect - creates wave-like movement as you scroll
+    const parallaxWaveX = Math.sin(sectionProgress * Math.PI * 2) * 0.15
+    const parallaxWaveY = Math.cos(sectionProgress * Math.PI * 2) * 0.1
+
+    // Add depth parallax - moves forward/backward based on scroll progress
+    const depthParallax = Math.sin(sectionProgress * Math.PI) * 0.2
+
+    // Combine base position with parallax effects
+    const targetPositionX = basePositionX + parallaxWaveX
+    const targetPositionY = basePositionY + parallaxWaveY
+    const targetPositionZ = basePositionZ + depthParallax
+
+    GSAP.to(this.mesh.position, {
+      x: targetPositionX,
+      y: targetPositionY,
+      z: targetPositionZ,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // ENHANCED: Animate mesh scale with pulsing/breathing effect
+    const baseScale = interpolate(
+      currentSettings.scale,
+      nextSettings.scale,
+      easedProgress
+    )
+
+    // Add pulsing effect - scale grows and shrinks as you scroll through section
+    const pulseScale = Math.sin(sectionProgress * Math.PI) * 0.15
+
+    // Add intensity-based variation - more dramatic scaling in later sections
+    const intensityMultiplier = 1 + (currentSection * 0.05)
+
+    const targetScale = baseScale + (pulseScale * intensityMultiplier)
+
+    GSAP.to(this.mesh.scale, {
+      x: targetScale,
+      y: targetScale,
+      z: targetScale,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // ENHANCED: Animate camera position with dynamic zoom based on scroll progress
+    const baseCameraZ = interpolate(
+      currentSettings.cameraZ,
+      nextSettings.cameraZ,
+      easedProgress
+    )
+
+    // Add zoom pulse - camera zooms in/out slightly as you scroll
+    const zoomPulse = Math.sin(sectionProgress * Math.PI) * 0.3
+
+    const targetCameraZ = baseCameraZ + zoomPulse
+
+    GSAP.to(this.camera.position, {
+      z: targetCameraZ,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // ENHANCED: Add camera tilt based on position for cinematic effect
+    const cameraTiltX = (targetPositionY * -0.1) + (sectionProgress * 0.05)
+    const cameraTiltY = (targetPositionX * 0.08) + (Math.sin(sectionProgress * Math.PI) * 0.03)
+
+    GSAP.to(this.camera.rotation, {
+      x: cameraTiltX,
+      y: cameraTiltY,
+      duration: 1.5,
+      ease: 'power2.out'
+    })
+
+    this.currentSectionIndex = currentSection
   }
 
   /**
@@ -181,10 +400,14 @@ class ScrollStage {
    */
   addEventListeners() {
     window.addEventListener('load', this.onLoad.bind(this))
-    
+
     // window.addEventListener('mousemove', this.onMouseMove.bind(this))  // enable for soundcheck (→ console)
-    
-    window.addEventListener('scroll', this.onScroll.bind(this))
+
+    // Listen to scroll events on scroll__stage for snap scrolling support
+    const scrollStage = document.querySelector('.scroll__stage')
+    if (scrollStage) {
+      scrollStage.addEventListener('scroll', this.onScroll.bind(this))
+    }
 
     window.addEventListener('resize', this.onResize.bind(this))
   }
@@ -193,6 +416,15 @@ class ScrollStage {
     document.body.classList.remove('loading')
 
     this.animations = new Animations(this.element, this.camera)
+
+    // Ensure sizes are recalculated after load
+    this.smoothScroll.setSizes()
+
+    // Initialize threshold-based snap scrolling
+    const scrollStage = document.querySelector('.scroll__stage')
+    if (scrollStage) {
+      this.thresholdSnap = new ThresholdSnap(scrollStage)
+    }
   }
 
   onMouseMove(event) {
@@ -246,7 +478,11 @@ class ScrollStage {
    */
   update() {
     const elapsedTime = this.clock.getElapsedTime()
-    this.mesh.rotation.y = elapsedTime * .05
+
+    // Add subtle continuous oscillation on top of scroll-based rotation
+    // This creates a "breathing" effect
+    this.mesh.rotation.y += Math.sin(elapsedTime * 0.5) * 0.0005
+    this.mesh.rotation.x += Math.cos(elapsedTime * 0.3) * 0.0003
 
     this.smoothScroll.update()
 
