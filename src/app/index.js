@@ -36,34 +36,61 @@ class ScrollStage {
       running: false
     }
 
-    this.settings = {
-      // vertex
-      uFrequency: {
-        start: 0,
-        end: 4
+    // Define unique shader settings for each section (5 sections total)
+    this.sectionSettings = [
+      // Section 1: Hero - Calm introduction
+      {
+        uFrequency: 0,
+        uAmplitude: 4,
+        uDensity: 1,
+        uStrength: 0.3,
+        uDeepPurple: 1,
+        uOpacity: 0.4,
+        rotationMultiplier: 0.2
       },
-      uAmplitude: {
-        start: 4,
-        end: 4
+      // Section 2: Services - Moderate energy
+      {
+        uFrequency: 2,
+        uAmplitude: 4,
+        uDensity: 1,
+        uStrength: 0.6,
+        uDeepPurple: 0.7,
+        uOpacity: 0.5,
+        rotationMultiplier: 0.4
       },
-      uDensity: {
-        start: 1,
-        end: 1
+      // Section 3: Case Studies - High energy
+      {
+        uFrequency: 3.5,
+        uAmplitude: 4,
+        uDensity: 1.2,
+        uStrength: 0.9,
+        uDeepPurple: 0.4,
+        uOpacity: 0.6,
+        rotationMultiplier: 0.6
       },
-      uStrength: {
-        start: 0,
-        end: 1.1
+      // Section 4: Process - Dynamic
+      {
+        uFrequency: 4,
+        uAmplitude: 4,
+        uDensity: 1,
+        uStrength: 1.1,
+        uDeepPurple: 0.2,
+        uOpacity: 0.65,
+        rotationMultiplier: 0.8
       },
-      // fragment
-      uDeepPurple: {  // max 1
-        start: 1,
-        end: 0
-      },
-      uOpacity: {  // max 1
-        start: .1,
-        end: .66
+      // Section 5: Contact - Energetic finale
+      {
+        uFrequency: 4.5,
+        uAmplitude: 4,
+        uDensity: 1.3,
+        uStrength: 1.2,
+        uDeepPurple: 0,
+        uOpacity: 0.7,
+        rotationMultiplier: 1.0
       }
-    }
+    ]
+
+    this.currentSectionIndex = 0
 
     this.scene = new THREE.Scene()
 
@@ -128,7 +155,10 @@ class ScrollStage {
    */
   addMesh() {
     this.geometry = new THREE.IcosahedronGeometry(1, 64)
-    
+
+    // Initialize with first section's settings
+    const initialSettings = this.sectionSettings[0]
+
     this.material = new THREE.ShaderMaterial({
       wireframe: true,
       blending: THREE.AdditiveBlending,
@@ -136,45 +166,108 @@ class ScrollStage {
       vertexShader,
       fragmentShader,
       uniforms: {
-        uFrequency: { value: this.settings.uFrequency.start },
-        uAmplitude: { value: this.settings.uAmplitude.start },
-        uDensity: { value: this.settings.uDensity.start },
-        uStrength: { value: this.settings.uStrength.start },
-        uDeepPurple: { value: this.settings.uDeepPurple.start },
-        uOpacity: { value: this.settings.uOpacity.start }
+        uFrequency: { value: initialSettings.uFrequency },
+        uAmplitude: { value: initialSettings.uAmplitude },
+        uDensity: { value: initialSettings.uDensity },
+        uStrength: { value: initialSettings.uStrength },
+        uDeepPurple: { value: initialSettings.uDeepPurple },
+        uOpacity: { value: initialSettings.uOpacity }
       }
     })
-    
+
     this.mesh = new THREE.Mesh(this.geometry, this.material)
-    
+
     this.scene.add(this.mesh)
   }
 
   /**
-   * SCROLL BASED ANIMATIONS
+   * SCROLL BASED ANIMATIONS - Section-based
    */
   updateScrollAnimations() {
     this.scroll.running = false
-    this.scroll.normalized = (this.scroll.hard / this.scroll.limit).toFixed(1)
-    
-    GSAP.to(this.mesh.rotation, {
-      x: this.scroll.normalized * Math.PI
-    })
- 
+
+    const scrollTop = this.scroll.hard
+    const sectionHeight = window.innerHeight
+    const totalSections = this.sectionSettings.length
+
+    // Calculate current section and progress within that section
+    const rawSectionIndex = scrollTop / sectionHeight
+    const sectionIndex = Math.floor(rawSectionIndex)
+    const sectionProgress = rawSectionIndex - sectionIndex
+
+    // Clamp to valid section range
+    const currentSection = Math.max(0, Math.min(sectionIndex, totalSections - 1))
+    const nextSection = Math.min(currentSection + 1, totalSections - 1)
+
+    // Get settings for current and next section
+    const currentSettings = this.sectionSettings[currentSection]
+    const nextSettings = this.sectionSettings[nextSection]
+
+    // Update progress bar based on overall scroll
+    const overallProgress = Math.min(rawSectionIndex / (totalSections - 1), 1)
     GSAP.to(this.elements.line, {
-      scaleX: this.scroll.normalized, 
-      transformOrigin: 'left', 
+      scaleX: overallProgress,
+      transformOrigin: 'left',
       duration: 1.5,
-      ease: 'ease'
+      ease: 'power2.out'
     })
 
-    for (const key in this.settings) {
-      if (this.settings[key].start !== this.settings[key].end) {
-        GSAP.to(this.mesh.material.uniforms[key], {
-          value: this.settings[key].start + this.scroll.normalized * (this.settings[key].end - this.settings[key].start)
-        })
-      }
+    // Interpolate between current and next section settings
+    const interpolate = (current, next, progress) => {
+      return current + (next - current) * progress
     }
+
+    // Animate shader uniforms
+    GSAP.to(this.mesh.material.uniforms.uFrequency, {
+      value: interpolate(currentSettings.uFrequency, nextSettings.uFrequency, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uAmplitude, {
+      value: interpolate(currentSettings.uAmplitude, nextSettings.uAmplitude, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uDensity, {
+      value: interpolate(currentSettings.uDensity, nextSettings.uDensity, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uStrength, {
+      value: interpolate(currentSettings.uStrength, nextSettings.uStrength, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uDeepPurple, {
+      value: interpolate(currentSettings.uDeepPurple, nextSettings.uDeepPurple, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    GSAP.to(this.mesh.material.uniforms.uOpacity, {
+      value: interpolate(currentSettings.uOpacity, nextSettings.uOpacity, sectionProgress),
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    // Animate mesh rotation based on section
+    const targetRotation = interpolate(
+      currentSettings.rotationMultiplier,
+      nextSettings.rotationMultiplier,
+      sectionProgress
+    ) * Math.PI
+
+    GSAP.to(this.mesh.rotation, {
+      x: targetRotation,
+      duration: 1.2,
+      ease: 'power2.out'
+    })
+
+    this.currentSectionIndex = currentSection
   }
 
   /**
